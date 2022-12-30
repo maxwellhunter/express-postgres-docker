@@ -4,21 +4,37 @@ services:
     image: postgres:14.1-alpine
     restart: always
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - '5432:5432'
     volumes: 
-      - db:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-database.sh:/docker-entrypoint-initdb.d/init-database.sh
   express:
         image: app
         restart: always
+        environment:
+          DB_URL: postgres:5432
         build:
             context: .
             dockerfile: Dockerfile
             target: base
         ports:
             - "${PORT}:${PORT}"
+  pgadmin:
+    container_name: pgadmin4_container
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    volumes:
+      - ./servers.json:/pgadmin4/servers.json
+    ports:
+      - "5050:80"
 volumes:
-  db:
-    driver: local
+  postgres-data: { }
